@@ -15,6 +15,13 @@
       "when": 1771970172087,
       "tag": "0001_dark_natasha_romanoff",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772468160555,
+      "tag": "0002_furry_hiroim",
+      "breakpoints": true
     }
   ]
 }
