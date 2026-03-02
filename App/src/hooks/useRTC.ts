@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 
 
-export const useRTC = (signalingSocket, roomId){
+export const useRTC = (signalingSocket:any, roomId:string)=>{
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const pc = useRef(new RTCPeerConnection({
