@@ -1,43 +1,55 @@
-import { Hono } from "hono";
-import p2p from "./routes/ws/p2p";
-import { string } from "zod";
+import { Hono } from 'hono'
 
-const app = new Hono();
-app.route("/p2p", p2p);
+interface WebSocketData {
+    username?: string;
+}
 
-app.get("/", (c) => {
-  return c.text("Hello Hono!");
+const users = new Map<string, any>();
+
+const app = new Hono()
+
+app.get("/", (c:any) => {
+  return c.text("testing!");
 });
 
-const server = Bun.serve({
-  port: 5000,
+const server = Bun.serve<WebSocketData>({
+  port: 8080,
   fetch(req, server) {
-    const success = server.upgrade(req);
-    if (success) {
-      return undefined;
-    }
-
-    return app.fetch(req);
+    if (server.upgrade(req, {
+      data:{
+        username: 'anonymous'
+      }
+    })) return undefined;
+ 
+    
+    return app.fetch(req,server);
   },
   websocket: {
-    open(ws) {
-      console.log("Socket connected");
-      ws.send(JSON.stringify({ type: "Connected" }));
-      ws.subscribe('signaling')
+    message(ws, message) {
+     const data = JSON.parse(message.toString());
+        console.log(`Message from ${ws.data.username}:`, data.type);
+
+      if (data.type === "login") {
+            users.set(data.username, ws);
+            ws.data.username = data.username;
+            return;
+        }
+
+       const targetWs = users.get(data.target);
+        if (targetWs) {
+            console.log(`Forwarding ${data.type} to ${data.target}`);
+            targetWs.send(JSON.stringify({ 
+                ...data, 
+                sender: ws.data.username 
+            }));
+        } else {
+            console.warn(`Target ${data.target} not found in active users.`);
+        }
     },
-    data: {} as { authToken: string },
-
-    async message(ws, message) {
-      console.log(`Received ${message}`);
-
-      ws.send(`You said: ${message}`);
-      ws.publish('signaling',message)
-    },
-
     close(ws) {
-      console.log("Socket disconnected");
-    },
-  },
+      if (ws.data?.username) users.delete(ws.data.username);
+    }
+  }
 });
 
-console.log(`Listening on ${server.hostname}:${server.port}`);
+console.log(`🚀 Signaling server running at ws://localhost:${server.port}`);
