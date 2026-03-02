@@ -23,6 +23,7 @@ const server = Bun.serve({
     open(ws) {
       console.log("Socket connected");
       ws.send(JSON.stringify({ type: "Connected" }));
+      ws.subscribe('signaling')
     },
     data: {} as { authToken: string },
 
@@ -30,7 +31,9 @@ const server = Bun.serve({
       console.log(`Received ${message}`);
 
       ws.send(`You said: ${message}`);
+      ws.publish('signaling',message)
     },
+
     close(ws) {
       console.log("Socket disconnected");
     },
